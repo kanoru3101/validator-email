@@ -6,8 +6,34 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 
-class Validator():
+class Formater():
 
+
+    def findFormat(str):
+        """
+        find format file from way
+        :param filename:
+        :return:
+        """
+        #print(self)
+        try:
+            str = re.search(r"[a-zA-Z0-9\_\-\ ]+\.(csv|json|txt)", str).group(0)
+        except:
+            return None
+        str = str.split(".")
+        if len(str) == 2:
+            return str[-1]
+
+    def dataValidator(data,format):
+        if format == "csv":
+            pass
+
+        if format == "json":
+            pass
+        if format == "txt":
+            pass
+
+class Validator():
 
     def __init__(self, e):
         self.email = e
@@ -26,6 +52,7 @@ class Validator():
             return "The email is not valid"
         else:
             raise Exception("Error while executing")
+
 
     def get_error_email(self):
         """
@@ -91,7 +118,7 @@ class Validator():
         finally:
             self.grabber()
 
-
+"""
 if __name__ == '__main__':
 
     #driver.get("http://www.emailvalidator.co")
@@ -105,5 +132,5 @@ if __name__ == '__main__':
     app2.find_email_at_site(driver)
     print(app2.get_result())
     print(app2.get_error_email())
-
+"""
 

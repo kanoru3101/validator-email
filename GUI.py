@@ -4,7 +4,9 @@ from PyQt5.QtWidgets import (QWidget, QToolTip, QPushButton, QApplication, QMess
     QAction, QFileDialog)
 from PyQt5.QtGui import QIcon, QFont
 from PyQt5.QtCore import * # QCoreApplication  #для сигналів
-
+from validator import *
+import csv
+import json
 
 class ImportList(QWidget):
     def __init__(self):
@@ -109,15 +111,45 @@ class Application(QMainWindow):
         Call class ImportList and return list with emails
         :return:
         """
-        self.textEdit = QTextEdit()
+        self.listData = QTextEdit()
         fname = QFileDialog.getOpenFileName(self, 'Open file')[0]
+        print(fname)
+        fileformat = Formater.findFormat(fname)
+        if fileformat:
+            if fname:
+                try:
+                    if fileformat == 'txt':
+                        self.listData = []
+                        f = open(fname, 'r')
+                        with f:
+                            self.listData = f.read().split("\n")
+                        self.setStatusTip('The list has been uploaded')
+                    if fileformat == 'csv':
+                        with open(fname, 'r', encoding='utf-8') as fcsv:
+                            reader = csv.reader(fcsv, delimiter=',')
+                            self.listData = []
+                            for row in reader:
+                                self.listData.append(row)
+                        self.setStatusTip('The list has been uploaded')
+                    if fileformat == 'json':
+                        with open(fname, 'r', encoding='utf-8') as f_json:
+                            self.listData = json.load(f_json)
+                except:
+                    self.setStatusTip('Error in data')
+                    self.listData = None
+            else:
+                self.setStatusTip("The list hasn't been uploaded")
+        else:
+            self.setStatusTip("Invalid data format")
 
-        f = open(fname, 'r')
 
-        with f:
-            data = f.read()
-            self.textEdit.setText(data)
-        self.setStatusTip('The list has been uploaded')
+    def closeEvent(self, event):
+        reply = QMessageBox.question(self, 'Message', "Are you sure to quit?", QMessageBox.Yes | QMessageBox.No,
+                                     QMessageBox.No)
+        if reply == QMessageBox.Yes:
+            event.accept()
+        else:
+            event.ignore()
 
 
     def menu_bar(self):
