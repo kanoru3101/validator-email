@@ -1,22 +1,45 @@
 import sys
 from PyQt5.QtWidgets import (QWidget, QToolTip, QPushButton, QApplication, QMessageBox, QDesktopWidget, QMainWindow,
     QGridLayout, QLabel, QLineEdit, QTextEdit, QScrollBar, QFrame, QGroupBox, QVBoxLayout, QHBoxLayout, QMenuBar,
-    QAction, QFileDialog)
+    QAction, QFileDialog, QScrollArea, QFormLayout, QProgressBar)
 from PyQt5.QtGui import QIcon, QFont, QPixmap
 from PyQt5.QtCore import * # QCoreApplication  #для сигналів
 from validator import *
 import csv
 import json
+import datetime
+import time
 
 class ImportList(QWidget):
-    def __init__(self):
-        pass
+
+    def __init__(self, listData):
+        super().__init__()
+        self.data = listData
+        self.setWindowTitle('Import List')
+        self.setWindowIcon(QIcon('logo.png'))
+        self.resize(800, 440)
+        self.show()
+
+
+class HistoryWidget(QWidget):
+
+    def __init__(self, email, result, parent=None):
+        super(HistoryWidget, self).__init__(parent)
+
+        self.labelEmail = QLabel(email+result)
+        self.searchTime = QLabel(str(datetime.datetime.now().time())[:-7])
+        layout = QVBoxLayout()
+        layout.addWidget(self.labelEmail)
+        layout.addWidget(self.searchTime)
+        self.setLayout(layout)
 
 
 class Application(QMainWindow):
 
     def __init__(self):
         super().__init__()
+        self.listData = []
+        self.current_count = 0
         self.initUI()
 
 
@@ -29,6 +52,9 @@ class Application(QMainWindow):
         font_title.setPointSize(15)
         font_title.setFamily("Comic Sans MS")
         font_title.setBold(True)
+        font_history = QFont()
+        font_history.setPointSize(10)
+        font_history.setFamily('Souvenir Lt BT')
 
         title_history = QLabel("History")
         title_history.setStyleSheet("background-color: rgb(125, 125, 125)")
@@ -36,22 +62,29 @@ class Application(QMainWindow):
         title_history.setFont(font_title)
         title_history.setAlignment(Qt.AlignCenter)
 
-        font_history = QFont()
-        font_history.setPointSize(10)
-        font_history.setFamily('Souvenir Lt BT')
+        self.scrollLayout = QFormLayout()
 
-        field_history = QLabel("Some Text")
-        field_history.setFont(font_history)
-        field_history.setAlignment(Qt.AlignTop)
+        # scroll area widget contents
+        self.scrollWidget = QWidget()
+        self.scrollWidget.setLayout(self.scrollLayout)
+
+        # scroll area
+        self.scrollArea = QScrollArea()
+        self.scrollArea.setWidgetResizable(True)
+        self.scrollArea.setWidget(self.scrollWidget)
 
         box_history = QVBoxLayout()
         box_history.addWidget(title_history)
-        box_history.addWidget(field_history)
+        box_history.addWidget(self.scrollArea)
 
-        frame_history = QFrame()
-        frame_history.setLayout(box_history)
-        frame_history.setStyleSheet("background-color: rgb(148, 148, 148)")
-        return frame_history
+        self.frame_history = QFrame()
+        self.frame_history.setLayout(box_history)
+        self.frame_history.setStyleSheet("background-color: rgb(148, 148, 148)")
+
+
+    def addEmail(self, email, result):
+        self.scrollLayout.addRow(HistoryWidget(email, result))
+
 
 
     def update_item_img(self, erorr_list):
@@ -81,6 +114,102 @@ class Application(QMainWindow):
                     self.smpt_connection_img.setPixmap(self.false_img)
                 if error == "Mailbox Existence":
                     self.mailbox_existence_img.setPixmap(self.false_img)
+
+
+    def updateProgressBar(self):
+        """
+        update Progress Bar
+        :return:
+        """
+        self.import_frame.setVisible(True)
+        self.progress_bar.setValue(self.persent_data)
+        self.current_file.setText(str(self.current_count).strip())
+        self.all_files.setText("with " + str(self.listData.__len__()))
+
+
+    def ImportdLayout(self):
+        """
+        Layout for import data:
+        :return:
+        """
+        self.progress_bar = QProgressBar(self)
+        self.label_download = QLabel("Download:")
+        self.current_file = QLabel(str(self.current_count).strip())
+        self.all_files = QLabel("with " + str(self.listData.__len__()))
+
+        self.donwload_layout = QHBoxLayout()
+        self.donwload_layout.addWidget(self.label_download)
+        self.donwload_layout.addWidget(self.current_file)
+        self.donwload_layout.addWidget(self.all_files)
+
+        self.import_layout = QVBoxLayout()
+        self.import_layout.addWidget(self.progress_bar)
+        self.import_layout.addLayout(self.donwload_layout)
+
+        self.import_frame = QFrame()
+        self.import_frame.setLayout(self.import_layout)
+        self.import_frame.setVisible(False)
+
+
+    def loadingData(self):
+        if self.listData != []:
+            self.current_count = 1
+            self.frame_item.setVisible(False)
+            self.is_valid.setText("Download...")
+            data_len = self.listData.__len__()
+            self.persent_data = 0
+            self.updateProgressBar()
+            for data in self.listData:
+                self.persent_data =  self.current_count / data_len * 100
+                self.updateProgressBar()
+                self.emailValidatorForData(data)
+                self.current_count += 1
+
+
+    def saveEmail(self, new_data, name_file):
+        """
+        Save email in file
+        :return:
+        """
+        try:
+            with open(name_file, 'r',  encoding='utf-8') as old_file:
+                data = json.load(old_file)
+        except:
+            data = []
+            with open(name_file, 'w', encoding='utf-8') as old_file:
+                json.dump(data,old_file, indent=4)
+        finally:
+            data.append(new_data)
+            with open(name_file, 'w', encoding='utf-8') as new_file:
+                json.dump(data, new_file, indent=4)
+
+
+    def emailValidatorForData(self, email):
+        """
+
+        :param email:
+        :return:
+        """
+        self.validator.setEmail(email)
+        self.validator.find_email_at_site()
+        result = self.validator.get_result()
+        if result == "The Email is valid":
+            self.addEmail(email, "is valid")
+            data = {
+                'email': email
+            }
+            self.saveEmail(data, "true_emails.json")
+        elif result == "The email is not valid":
+            errors = self.validator.get_error_email()
+            self.addEmail(email, "is not valid")
+            data = {
+                'email': email,
+                'error': errors
+            }
+            self.saveEmail(data,"wrond_emails.json")
+        else:
+            pass
+
 
     def item_frame(self):
         """
@@ -174,20 +303,22 @@ class Application(QMainWindow):
         self.is_valid =  QLabel("Empty status")
 
         self.item_frame()
-        self.frame_history = self.history_frame()
+        self.history_frame()
+        self.ImportdLayout()
 
-        grid = QGridLayout()
-        grid.setSpacing(10)
-        grid.addWidget(self.label_email, 0, 0)
-        grid.addWidget(self.line_email, 1, 0, 1, 3)
-        grid.addWidget(self.btn_validator, 1, 3)
-        grid.addWidget(self.status_email, 2, 0)
-        grid.addWidget(self.frame_item, 3, 0, 6, 6)
-        grid.addWidget(self.is_valid, 2, 1)
-        grid.addWidget(self.frame_history,0, 6, 10, 10)
+        self.grid = QGridLayout()
+        self.grid.setSpacing(10)
+        self.grid.addWidget(self.label_email, 0, 0)
+        self.grid.addWidget(self.line_email, 1, 0, 1, 3)
+        self.grid.addWidget(self.btn_validator, 1, 3)
+        self.grid.addWidget(self.status_email, 2, 0)
+        self.grid.addWidget(self.frame_item, 3, 0, 6, 3)
+        self.grid.addWidget(self.is_valid, 2, 1)
+        self.grid.addWidget(self.frame_history,0, 4, 10, 10)
+        self.grid.addWidget(self.import_frame, 3, 0, 4, 2)
 
         window = QWidget(self)
-        window.setLayout(grid)
+        window.setLayout(self.grid)
 
         self.setCentralWidget(window)
         self.btn_validator.clicked.connect(self.buttonClickedValid)
@@ -211,18 +342,19 @@ class Application(QMainWindow):
         result = self.validator.get_result()
         print(result)
         if result == "The Email is valid":
-            self.is_valid.setText(email + " " + result)
+            self.is_valid.setText(email + " " + "is a valid Email address")
             self.is_valid.setStyleSheet("color: green")
             self.frame_item.setVisible(False)
+            self.addEmail(email, "is valid")
 
         elif result == "The email is not valid":
-            self.is_valid.setText(email + " " + result)
+            self.is_valid.setText(email + " " + "does not appear to be a valid Email address")
             self.is_valid.setStyleSheet("color: red")
-
             errors = self.validator.get_error_email()
             #print(errors)
             self.update_item_img(errors)
             self.frame_item.setVisible(True)
+            self.addEmail(email, "is not valid")
         else:
             self.is_valid.setText("Error, Try again")
             self.is_valid.setStyleSheet("color: yellow")
@@ -253,24 +385,26 @@ class Application(QMainWindow):
         fileformat = Formater.findFormat(fname)
         if fileformat:
             if fname:
-                try:
-                    if fileformat == 'txt':
+                if fileformat == 'txt':
+                    self.listData = []
+                    f = open(fname, 'r')
+                    with f:
+                        self.listData = f.read().split("\n")
+                    self.setStatusTip('The list has been uploaded')
+                    self.loadingData()
+                elif fileformat == 'csv':
+                    with open(fname, 'r', encoding='utf-8') as fcsv:
+                        reader = csv.reader(fcsv, delimiter=',')
                         self.listData = []
-                        f = open(fname, 'r')
-                        with f:
-                            self.listData = f.read().split("\n")
-                        self.setStatusTip('The list has been uploaded')
-                    if fileformat == 'csv':
-                        with open(fname, 'r', encoding='utf-8') as fcsv:
-                            reader = csv.reader(fcsv, delimiter=',')
-                            self.listData = []
-                            for row in reader:
-                                self.listData.append(row)
-                        self.setStatusTip('The list has been uploaded')
-                    if fileformat == 'json':
-                        with open(fname, 'r', encoding='utf-8') as f_json:
-                            self.listData = json.load(f_json)
-                except:
+                        for row in reader:
+                            self.listData.append(row)
+                    self.setStatusTip('The list has been uploaded')
+                    self.loadingData()
+                elif fileformat == 'json':
+                    with open(fname, 'r', encoding='utf-8') as f_json:
+                        self.listData = json.load(f_json)
+                    self.loadingData()
+                else:
                     self.setStatusTip('Error in data')
                     self.listData = None
             else:
@@ -301,9 +435,7 @@ class Application(QMainWindow):
         exitAction.setStatusTip('Exit application')
         exitAction.triggered.connect(self.validator.close)
         exitAction.triggered.connect(app.quit)
-
         info_program = QAction(QIcon(''), '&Information', self)
-
         self.statusBar()
         menubar = self.menuBar()
         fileMenu = menubar.addMenu('&File')
@@ -320,7 +452,7 @@ class Application(QMainWindow):
         self.center_window()
         self.setWindowTitle('Email Validator')
         self.setWindowIcon(QIcon('logo.png'))
-        self.resize(600, 440)
+        self.resize(800, 440)
         self.show()
 
 

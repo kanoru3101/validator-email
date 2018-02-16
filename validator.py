@@ -5,7 +5,8 @@ from bs4 import BeautifulSoup
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
-
+from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
+from GUI import *
 class Formater():
 
     def findFormat(str):
@@ -39,7 +40,14 @@ class Validator():
         #self.driver = d
         #self.is_alert = None
         self.error_email = []
-        self.driver = webdriver.Firefox(executable_path='C:\\geckodriver_firefox\\\geckodriver.exe')
+        dcap = dict(DesiredCapabilities.PHANTOMJS)
+        dcap["phantomjs.page.settings.userAgent"] = (
+            "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/53 (KHTML, like Gecko) Chrome/15.0.87")
+
+        self.driver = webdriver.PhantomJS(executable_path='C:/phantomjs-2.1.1-windows/bin/phantomjs.exe',
+                                         desired_capabilities=dcap, service_args=['--ignore-ssl-errors=true'])
+        #self.driver = webdriver.Firefox(executable_path='C:\\geckodriver_firefox\\\geckodriver.exe')
+
 
     def setEmail(self, e):
         self.email = e
@@ -80,41 +88,44 @@ class Validator():
                 if item.find('i', class_='icon-remove'):
                     error = item.get_text()
                     self.error_email.append(error[:-3])
-
+        if self.is_alert == None:
+            print("EROR GRABBER")
 
     def find_email_at_site(self):
         """
         search email at site http://www.emailvalidator.co
         :return:
         """
-        r = requests.get("http://www.emailvalidator.co")
-        if r.status_code != 200:
-            raise r.status_code
+        #r = requests.get("http://www.emailvalidator.co")
+        #if r.status_code != 200:
+        #    raise r.status_code
         self.driver.get("http://www.emailvalidator.co")
         label_search = WebDriverWait(self.driver, 10).until(
             EC.presence_of_element_located((By.ID, "EmailAddress"))
         )
+        #self.driver.set_window_size(1920, 1080)
+        #self.driver.save_screenshot('test.png')
         label_search.clear()
         label_search.send_keys(self.email)
-        buttom = WebDriverWait(self.driver, 10).until(
-            EC.presence_of_element_located((By.CLASS_NAME, 'button.yellow.large'))
+        buttom = WebDriverWait(self.driver, 5).until(
+            #EC.presence_of_element_located((By.XPATH, 'button.yellow.large'))
+            EC.presence_of_element_located((By.XPATH, "//div[@class='fl']//a[@class='button yellow large']"))
         )
         buttom.click()
         WebDriverWait(self.driver, 5)
-        is_alert = None
         try:
             alert = WebDriverWait(self.driver, 5).until(
-                EC.presence_of_element_located((By.CLASS_NAME, 'alert.alert-success'))
+                EC.presence_of_element_located((By.XPATH, "//div[@class='span7']//div[@class='alert alert-success']"))
             )
             self.is_alert = True
         except:
             try:
-                alert = WebDriverWait(self.driver, 5).until(
-                    EC.presence_of_element_located((By.CLASS_NAME, 'alert.alert-danger'))
+                alert = WebDriverWait(self.driver, 2).until(
+                    EC.presence_of_element_located((By.XPATH, "//div[@class='span7']//div[@class='alert alert-danger']"))
                 )
                 self.is_alert = False
             except:
-                pass
+                self.is_alert = None
         finally:
             self.grabber()
 
@@ -126,9 +137,12 @@ class Validator():
         """
         self.driver.close()
 
-
-
-
+"""
+app = Validator()
+app.setEmail("kanoru3101@gmail.com")
+app.find_email_at_site()
+print(app.get_result())
+"""
 """
 if __name__ == '__main__':
 
