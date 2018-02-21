@@ -26,20 +26,48 @@ class HistoryWidget(QWidget):
     def __init__(self, email, result, parent=None):
         super(HistoryWidget, self).__init__(parent)
 
-        self.labelEmail = QLabel(email+result)
+
+        self.labelEmail = QLabel(email + " " + result)
+        self.labelEmail.setStyleSheet('color: #22748d; font-family: "Comic Sans MS";font-size: 12px; font: bold;')
         self.searchTime = QLabel(str(datetime.datetime.now().time())[:-7])
-        layout = QVBoxLayout()
-        layout.addWidget(self.labelEmail)
-        layout.addWidget(self.searchTime)
-        self.setLayout(layout)
+        self.searchTime.setStyleSheet('color: #22748d; font-family: "Comic Sans MS";font-size: 9px; font: bold;')
+        new_layout = QVBoxLayout(self)
+        new_layout.addWidget(self.labelEmail)
+        new_layout.addWidget(self.searchTime)
+        self.newFrame = QFrame(self)
+        self.newFrame.setLayout(new_layout)
+        self.layout = QVBoxLayout(self)
+        self.layout.addWidget(self.newFrame)
+        #layout.addWidget(self.labelEmail)
+        #layout.addWidget(self.searchTime)
+        self.setLayout(self.layout)
+        self.setStyleSheet("""
+        QWidget{
+            border-style: inset;
+            background-color: #FFFAB7;
+            border-color: #3FE3F5;
+        }
+        """)
+
+class ThreadClass(QThread):
+    update_progressbar = pyqtSignal(float)
+
+    def __init__(self, parent=None):
+        super(ThreadClass, self).__init__(parent)
+        self.sig.connect(Application.updateProgressBar)
+    def run(self):
+        self.update_progressbar.emit(val)
+        self.update_progressbar.emit(val)
 
 
 class Application(QMainWindow):
 
     def __init__(self):
         super().__init__()
+        self.setStyleSheet(open("StyleSheet.css", 'r').read())
         self.listData = []
         self.current_count = 0
+        self.font_text = 'color: #22748d; font-family: "Comic Sans MS";font-size: 13px; font: bold;'
         self.initUI()
 
 
@@ -48,19 +76,18 @@ class Application(QMainWindow):
         empty for history with title and list found email
         :return: frame with history
         """
-        font_title = QFont()
-        font_title.setPointSize(15)
-        font_title.setFamily("Comic Sans MS")
-        font_title.setBold(True)
-        font_history = QFont()
-        font_history.setPointSize(10)
-        font_history.setFamily('Souvenir Lt BT')
-
-        title_history = QLabel("History")
-        title_history.setStyleSheet("background-color: rgb(125, 125, 125)")
-        title_history.setFixedHeight(25)
-        title_history.setFont(font_title)
-        title_history.setAlignment(Qt.AlignCenter)
+        self.title_history = QLabel("History")
+        self.title_history.setObjectName("title_history")
+        self.title_history.setStyleSheet("""
+        QLabel#title_history{
+        color: #fffab9;
+        font-family: "Comic Sans MS";
+        font-size: 17px;
+        font: bold;
+        }""")
+        self.title_history.setFixedHeight(25)
+        #self.title_history.setFont(font_title)
+        self.title_history.setAlignment(Qt.AlignCenter)
 
         self.scrollLayout = QFormLayout()
 
@@ -74,17 +101,16 @@ class Application(QMainWindow):
         self.scrollArea.setWidget(self.scrollWidget)
 
         box_history = QVBoxLayout()
-        box_history.addWidget(title_history)
+        box_history.addWidget(self.title_history)
         box_history.addWidget(self.scrollArea)
 
         self.frame_history = QFrame()
         self.frame_history.setLayout(box_history)
-        self.frame_history.setStyleSheet("background-color: rgb(148, 148, 148)")
+        self.frame_history.setStyleSheet("background-color: #91cbd4")
 
 
     def addEmail(self, email, result):
         self.scrollLayout.addRow(HistoryWidget(email, result))
-
 
 
     def update_item_img(self, erorr_list):
@@ -224,53 +250,60 @@ class Application(QMainWindow):
         self.test_img = QPixmap("logo.png")
         self.test_img = self.test_img.scaled(64, 50)
 
-        email_syntax = QLabel("Email Syntax:")
+        self.email_syntax = QLabel("Email Syntax:")
+        self.email_syntax.setStyleSheet(self.font_text)
         self.email_syntax_img = QLabel()
         self.email_syntax_img.setPixmap(self.true_img)
         email_syntax_loyout = QHBoxLayout()
-        email_syntax_loyout.addWidget(email_syntax)
+        email_syntax_loyout.addWidget(self.email_syntax)
         email_syntax_loyout.addWidget(self.email_syntax_img)
 
-        disposable_domain = QLabel("Known Disposable Email Domain:")
+        self.disposable_domain = QLabel("Known Disposable Email Domain:")
+        self.disposable_domain.setStyleSheet(self.font_text)
         self.disposable_domain_img = QLabel()
         self.disposable_domain_img.setPixmap(self.false_img)
         disposable_domain_layout = QHBoxLayout()
-        disposable_domain_layout.addWidget(disposable_domain)
+        disposable_domain_layout.addWidget(self.disposable_domain)
         disposable_domain_layout.addWidget(self.disposable_domain_img)
 
-        isp_syntax = QLabel("ISP-Specific Syntax:")
+        self.isp_syntax = QLabel("ISP-Specific Syntax:")
+        self.isp_syntax.setStyleSheet(self.font_text)
         self.isp_syntax_img = QLabel()
         self.isp_syntax_img.setPixmap(self.test_img)
         isp_syntax_layout = QHBoxLayout()
-        isp_syntax_layout.addWidget(isp_syntax)
+        isp_syntax_layout.addWidget(self.isp_syntax)
         isp_syntax_layout.addWidget(self.isp_syntax_img)
 
-        domain_validity = QLabel("Domain Validity:")
+        self.domain_validity = QLabel("Domain Validity:")
+        self.domain_validity.setStyleSheet(self.font_text)
         self.domain_validity_img = QLabel()
         self.domain_validity_img.setPixmap(self.test_img)
         domain_validity_layout = QHBoxLayout()
-        domain_validity_layout.addWidget(domain_validity)
+        domain_validity_layout.addWidget(self.domain_validity)
         domain_validity_layout.addWidget(self.domain_validity_img)
 
-        mail_exchanger = QLabel("Mail Exchanger (MX) records:")
+        self.mail_exchanger = QLabel("Mail Exchanger (MX) records:")
+        self.mail_exchanger.setStyleSheet(self.font_text)
         self.mail_exchanger_img = QLabel()
         self.mail_exchanger_img.setPixmap(self.test_img)
         mail_exchanger_layout = QHBoxLayout()
-        mail_exchanger_layout.addWidget(mail_exchanger)
+        mail_exchanger_layout.addWidget(self.mail_exchanger)
         mail_exchanger_layout.addWidget(self.mail_exchanger_img)
 
         smpt_connection = QLabel("SMTP Connection:")
+        smpt_connection.setStyleSheet(self.font_text)
         self.smpt_connection_img = QLabel()
         self.smpt_connection_img.setPixmap(self.test_img)
         smpt_connection_layout = QHBoxLayout()
         smpt_connection_layout.addWidget(smpt_connection)
         smpt_connection_layout.addWidget(self.smpt_connection_img)
 
-        mailbox_existence = QLabel("Mailbox Existence:")
+        self.mailbox_existence = QLabel("Mailbox Existence:")
+        self.mailbox_existence.setStyleSheet(self.font_text)
         self.mailbox_existence_img = QLabel()
         self.mailbox_existence_img.setPixmap(self.test_img)
         mailbox_existence_layout = QHBoxLayout()
-        mailbox_existence_layout.addWidget(mailbox_existence)
+        mailbox_existence_layout.addWidget(self.mailbox_existence)
         mailbox_existence_layout.addWidget(self.mailbox_existence_img)
 
         frame_layout = QVBoxLayout()
@@ -286,7 +319,6 @@ class Application(QMainWindow):
         self.frame_item = QFrame()
         self.frame_item.setLayout(frame_layout)
         self.frame_item.setVisible(False)
-        self.frame_item.setStyleSheet("background-color: rgb(200, 255, 255)")
 
           #Visible frame
 
@@ -297,11 +329,12 @@ class Application(QMainWindow):
         :return:
         """
         self.label_email = QLabel("Enter Email:")
+        self.label_email.setStyleSheet(self.font_text)
         self.line_email = QLineEdit()
         self.btn_validator = QPushButton('Valid')
         self.status_email = QLabel("Status Email:")
+        self.status_email.setStyleSheet(self.font_text)
         self.is_valid =  QLabel("Empty status")
-
         self.item_frame()
         self.history_frame()
         self.ImportdLayout()
@@ -317,10 +350,9 @@ class Application(QMainWindow):
         self.grid.addWidget(self.frame_history,0, 4, 10, 10)
         self.grid.addWidget(self.import_frame, 3, 0, 4, 2)
 
-        window = QWidget(self)
-        window.setLayout(self.grid)
-
-        self.setCentralWidget(window)
+        self.window = QFrame(self)
+        self.window.setLayout(self.grid)
+        self.setCentralWidget(self.window)
         self.btn_validator.clicked.connect(self.buttonClickedValid)
 
 
@@ -414,8 +446,8 @@ class Application(QMainWindow):
 
 
     def closeEvent(self, event):
-        reply = QMessageBox.question(self, 'Message', "Are you sure to quit?", QMessageBox.Yes | QMessageBox.No,
-                                     QMessageBox.No)
+        reply = QMessageBox.question(self, 'Message', '<html style="font-size:14pt; font-family: Comic Sans MS; color: #91cbd4; font: bolt";>Are you sure to quit?</html>',
+                                     QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
         if reply == QMessageBox.Yes:
             self.validator.close()
             event.accept()
@@ -452,7 +484,7 @@ class Application(QMainWindow):
         self.center_window()
         self.setWindowTitle('Email Validator')
         self.setWindowIcon(QIcon('logo.png'))
-        self.resize(800, 440)
+        self.resize(900, 440)
         self.show()
 
 
