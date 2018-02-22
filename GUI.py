@@ -17,8 +17,77 @@ class ImportList(QWidget):
         self.data = listData
         self.setWindowTitle('Import List')
         self.setWindowIcon(QIcon('logo.png'))
-        self.resize(800, 440)
+        self.resize(500, 500)
         self.show()
+
+
+class HelpImportList(QWidget):
+
+    def __init__(self, parent=None):
+        super(HelpImportList, self).__init__(parent)
+        #self.resize(300,300)
+        self.setFixedSize(600,500)
+        self.helpArticle()
+        self.setStyleSheet('background-color: #EDFFFA;')
+        self.setWindowIcon(QIcon('logo.png'))
+        self.setWindowTitle("Help with import")
+
+    def helpArticle(self):
+        """
+        create article about import list
+        :return:
+        """
+        topic_style = 'color: #22748d; font-family: "Comic Sans MS";font-size: 20px; font: bold;'
+        item_style = 'color: #22748d; font-family: "Comic Sans MS";font-size: 16px; font: bold;'
+        example_style = 'font-family: "Comic Sans MS";font-size: 13px;'
+
+        name_topic = QLabel('How to import a list?')
+        name_topic.setStyleSheet(topic_style)
+
+        text = QLabel("You must re-format the e-mails in the format as in the example")
+        text.setStyleSheet(item_style)
+        txt_format = QLabel(".txt Format:")
+        txt_format.setStyleSheet(item_style)
+        txt_example = QLabel(
+            '\ttext@mail.com\n\texample@mail.com\n\tJohn.monday@example.io'
+        )
+        txt_example.setStyleSheet(example_style)
+
+        csv_format = QLabel(".csv Format:")
+        csv_format.setStyleSheet(item_style)
+        csv_example_1 = QLabel(
+            '\ttext@mail.com\n\texample@mail.com\n\tJohn.monday@example.io'
+        )
+        csv_example_1.setStyleSheet(example_style)
+
+        or_csv = QLabel("Or so:")
+        or_csv.setStyleSheet(item_style)
+        csv_example_2 = QLabel(
+            '\t“text@mail.com”,“example@mail.com”,“John.monday@example.io”,'
+        )
+        csv_example_2.setStyleSheet(example_style)
+
+        json_format = QLabel('.json Format:')
+        json_format.setStyleSheet(item_style)
+        json_emample = QLabel('  [\n\t“text@mail.com”,\n\t“example@mail.com”,\n\t“John.monday@example.io”\n  ]')
+        json_emample.setStyleSheet(example_style)
+
+        layout = QVBoxLayout(self)
+        layout.addWidget(name_topic)
+        layout.addWidget(text)
+        layout.addWidget(txt_format)
+        layout.addWidget(txt_example)
+        layout.addWidget(csv_format)
+        layout.addWidget(csv_example_1)
+        layout.addWidget(or_csv)
+        layout.addWidget(csv_example_2)
+        layout.addWidget(json_format)
+        layout.addWidget(json_emample)
+
+        self.setLayout(layout)
+
+
+
 
 
 class HistoryWidget(QWidget):
@@ -68,6 +137,7 @@ class Application(QMainWindow):
         self.listData = []
         self.current_count = 0
         self.font_text = 'color: #22748d; font-family: "Comic Sans MS";font-size: 13px; font: bold;'
+        self.helpWindow = HelpImportList()
         self.initUI()
 
 
@@ -331,7 +401,7 @@ class Application(QMainWindow):
         self.label_email = QLabel("Enter Email:")
         self.label_email.setStyleSheet(self.font_text)
         self.line_email = QLineEdit()
-        self.btn_validator = QPushButton('Valid')
+        self.btn_validator = QPushButton('Valid Email')
         self.status_email = QLabel("Status Email:")
         self.status_email.setStyleSheet(self.font_text)
         self.is_valid =  QLabel("Empty status")
@@ -467,16 +537,24 @@ class Application(QMainWindow):
         exitAction.setStatusTip('Exit application')
         exitAction.triggered.connect(self.validator.close)
         exitAction.triggered.connect(app.quit)
-        info_program = QAction(QIcon(''), '&Information', self)
+        help_importList = QAction(QIcon(''), '&Import List', self)
+        help_importList.triggered.connect(self.helpWindow.show)
+
         self.statusBar()
         menubar = self.menuBar()
         fileMenu = menubar.addMenu('&File')
         fileMenu.addAction(importList)
         fileMenu.addAction(exitAction)
-        info = menubar.addMenu("&Info")
-        info.addAction(info_program)
+
+        info = menubar.addMenu("&Help")
+        info.addAction(help_importList)
+
 
     def initUI(self):
+        """
+        General setting for app
+        :return:
+        """
 
         self.validator = Validator()
         self.menu_bar()
@@ -491,5 +569,5 @@ class Application(QMainWindow):
 if __name__ == '__main__':
 
     app = QApplication(sys.argv)
-    ex = Application()
+    GUI = Application()
     sys.exit(app.exec_())

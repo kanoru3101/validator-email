@@ -1,0 +1,46 @@
+QPushButton {
+    background-color: #91cbd4;
+    color: #fffab9;
+    border-radius: 5px;
+    height: 30px;
+    width: 100px;
+    font-family: "Comic Sans MS";
+    font-size: 16px;
+    font: bold;
+}
+QPushButton:hover{
+    background-color: #55848d;
+
+}
+
+QLineEdit{
+    background-color: #ffffcc;
+}
+
+QMenuBar::item {
+    background-color: #EDFFFA;
+    font-family: "Comic Sans MS";
+}
+
+
+QMenuBar::item:selected  {
+    background-color: #91cbd4;
+    font-family: "Comic Sans MS";
+}
+
+
+
+QMainWindow{
+    background-color: #EDFFFA;
+}
+
+QLabel#title_history{
+   background-color: #fffab9;
+}
+
+
+Test{
+    color: #22748d;
+    font-family: "Arial Narrow";
+    font-size: 13px, font: bold
+}
