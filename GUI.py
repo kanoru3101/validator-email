@@ -86,15 +86,10 @@ class HelpImportList(QWidget):
 
         self.setLayout(layout)
 
-
-
-
-
 class HistoryWidget(QWidget):
 
     def __init__(self, email, result, parent=None):
         super(HistoryWidget, self).__init__(parent)
-
 
         self.labelEmail = QLabel(email + " " + result)
         self.labelEmail.setStyleSheet('color: #22748d; font-family: "Comic Sans MS";font-size: 12px; font: bold;')
@@ -118,15 +113,28 @@ class HistoryWidget(QWidget):
         }
         """)
 
+
 class ThreadClass(QThread):
     update_progressbar = pyqtSignal(float)
 
-    def __init__(self, parent=None):
-        super(ThreadClass, self).__init__(parent)
-        self.sig.connect(Application.updateProgressBar)
+    def __init__(self):
+        QThread.__init__(self)
+        self.resultValid = None
+        self.email = None
+
     def run(self):
-        self.update_progressbar.emit(val)
-        self.update_progressbar.emit(val)
+        print("run")
+        self.email = GUI.line_email.text()
+        GUI.validator.setEmail(self.email)
+        GUI.validator.find_email_at_site()
+        print("ex")
+        self.resultValid = GUI.validator.get_result()
+        #self.update()
+        print('end')
+
+    def update(self):
+        GUI.addEmail(self.email, self.resultValid)
+        print("update")
 
 
 class Application(QMainWindow):
@@ -431,7 +439,10 @@ class Application(QMainWindow):
         :return:
         """
         if self.line_email.text().strip() is not None and self.line_email.text().strip() != "":
-            self.emailValidator(self.line_email.text().strip())
+            #self.emailValidator(self.line_email.text().strip())
+            self.threadEmail = ThreadClass()
+            self.threadEmail.start()
+            self.threadEmail.finished.connect(self.threadEmail.update)
 
 
     def emailValidator(self, email):
