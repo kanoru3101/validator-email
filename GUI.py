@@ -86,6 +86,7 @@ class HelpImportList(QWidget):
 
         self.setLayout(layout)
 
+
 class HistoryWidget(QWidget):
 
     def __init__(self, email, result, parent=None):
@@ -115,26 +116,90 @@ class HistoryWidget(QWidget):
 
 
 class ThreadClass(QThread):
-    update_progressbar = pyqtSignal(float)
 
-    def __init__(self):
+    def __init__(self, email):
         QThread.__init__(self)
         self.resultValid = None
-        self.email = None
+        self.email = email
 
     def run(self):
         print("run")
-        self.email = GUI.line_email.text()
+        #self.email = GUI.line_email.text()
         GUI.validator.setEmail(self.email)
         GUI.validator.find_email_at_site()
-        print("ex")
         self.resultValid = GUI.validator.get_result()
         #self.update()
         print('end')
 
-    def update(self):
-        GUI.addEmail(self.email, self.resultValid)
+    def updateResultValid(self):
+
+        GUI.emailValidator(self.email, self.resultValid)
+        """
+        if self.resultValid == "The Email is valid":
+            GUI.is_valid.setText(self.email + " " + "is a valid Email address")
+            GUI.is_valid.setStyleSheet("color: green")
+            GUI.frame_item.setVisible(False)
+            GUI.addEmail(self.email, " is valid")
+
+        elif self.resultValid == "The email is not valid":
+            GUI.is_valid.setText(self.email + " " + "does not appear to be a valid Email address")
+            GUI.is_valid.setStyleSheet("color: red")
+            errors = GUI.validator.get_error_email()
+            #print(errors)
+            GUI.update_item_img(errors)
+            GUI.frame_item.setVisible(True)
+            GUI.addEmail(self.email, " is not valid")
+        else:
+            GUI.is_valid.setText("Error, Try again")
+            GUI.is_valid.setStyleSheet("color: yellow")
+            GUI.frame_item.setVisible(False)
         print("update")
+        """
+    """
+    def listEmail(self):
+        print("Start listEmail")
+        GUI.addEmail(self.email, self.resultValid)
+        print("end listEmail")
+    """
+
+class ThreadClassList(QThread):
+
+    def __init__(self, list_email):
+        QThread.__init__(self)
+        self.resultValid = None
+        self.list_email = list_email
+        self.current_count = 0
+        self.data_len = len(self.list_email)
+
+    def run(self):
+        for data in self.list_email:
+            email = str(data)
+            print("-------------------")
+            print('list data')
+            self.current_count += 1
+            self.persent_data = self.current_count / self.data_len * 100
+            print("updateProgressBar()")
+            GUI.updateProgressBar(str(self.current_count), self.persent_data)
+            print("run")
+            print(email)
+            GUI.validator.setEmail(data)
+            print("next GUI.validator.find_email_at_site()")
+            GUI.validator.find_email_at_site()
+            print("next self.resultValid")
+            self.resultValid = GUI.validator.get_result()
+            print("good self.resultValid")
+            print(GUI.validator.email)
+            print('end')
+            self.updateResultValid(data)
+
+
+    def updateResultValid(self,data):
+        print("updateResultValid")
+        #self.finished.connect(GUI.emailValidatorForData(self.email, self.resultValid))
+        GUI.emailValidatorForData(data, self.resultValid)
+        print("--------------------")
+
+
 
 
 class Application(QMainWindow):
@@ -220,14 +285,15 @@ class Application(QMainWindow):
                     self.mailbox_existence_img.setPixmap(self.false_img)
 
 
-    def updateProgressBar(self):
+    def updateProgressBar(self, count, persent):
         """
         update Progress Bar
         :return:
         """
+        self.frame_item.setVisible(False)
         self.import_frame.setVisible(True)
-        self.progress_bar.setValue(self.persent_data)
-        self.current_file.setText(str(self.current_count).strip())
+        self.progress_bar.setValue(persent)
+        self.current_file.setText(str(count).strip())
         self.all_files.setText("with " + str(self.listData.__len__()))
 
 
@@ -256,19 +322,23 @@ class Application(QMainWindow):
 
 
     def loadingData(self):
+        print("loadingData")
         if self.listData != []:
             self.current_count = 1
             self.frame_item.setVisible(False)
             self.is_valid.setText("Download...")
             data_len = self.listData.__len__()
             self.persent_data = 0
-            self.updateProgressBar()
-            for data in self.listData:
-                self.persent_data =  self.current_count / data_len * 100
-                self.updateProgressBar()
-                self.emailValidatorForData(data)
-                self.current_count += 1
+            self.threadEmailList = ThreadClassList(self.listData)
+            self.threadEmailList.start()
+            #self.threadEmailList.finished.connect(self.threadEmailList.updateResultValid)
+            #self.threadEmailList.
 
+    def workingWithList(self, data):
+        print("workingWithList")
+
+        self.threadEmailList.start()
+        #self.threadEmailList.finished.connect(self.threadEmailList.updateResultValid)
 
     def saveEmail(self, new_data, name_file):
         """
@@ -288,31 +358,71 @@ class Application(QMainWindow):
                 json.dump(data, new_file, indent=4)
 
 
-    def emailValidatorForData(self, email):
+    def emailValidatorForData(self, email, result):
         """
 
         :param email:
         :return:
         """
+        """
         self.validator.setEmail(email)
         self.validator.find_email_at_site()
         result = self.validator.get_result()
+        """
+        print("Now if result")
         if result == "The Email is valid":
-            self.addEmail(email, "is valid")
+            print(" 1 connect")
+            print("1 good connect")
+            self.addEmail(email, " is valid")
             data = {
                 'email': email
             }
             self.saveEmail(data, "true_emails.json")
         elif result == "The email is not valid":
+            print("2 connect")
             errors = self.validator.get_error_email()
-            self.addEmail(email, "is not valid")
+            print("2 good connect")
+            self.addEmail(email, " is not valid")
             data = {
                 'email': email,
                 'error': errors
             }
             self.saveEmail(data,"wrond_emails.json")
         else:
+            print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
             pass
+
+
+    def emailValidator(self, email, result):
+        """
+        :param email:
+        :return:
+        """
+        """
+        self.validator.setEmail(email)
+        self.validator.find_email_at_site()
+        result = self.validator.get_result()
+        print(result)
+        """
+        if result == "The Email is valid":
+            self.is_valid.setText(email + " " + "is a valid Email address")
+            self.is_valid.setStyleSheet("color: green")
+            self.frame_item.setVisible(False)
+            self.addEmail(email, "is valid")
+
+        elif result == "The email is not valid":
+            self.is_valid.setText(email + " " + "does not appear to be a valid Email address")
+            self.is_valid.setStyleSheet("color: red")
+            errors = self.validator.get_error_email()
+            #print(errors)
+            self.update_item_img(errors)
+            self.frame_item.setVisible(True)
+            self.addEmail(email, "is not valid")
+        else:
+            self.is_valid.setText("Error, Try again")
+            self.is_valid.setStyleSheet("color: yellow")
+            self.frame_item.setVisible(False)
+
 
 
     def item_frame(self):
@@ -440,39 +550,9 @@ class Application(QMainWindow):
         """
         if self.line_email.text().strip() is not None and self.line_email.text().strip() != "":
             #self.emailValidator(self.line_email.text().strip())
-            self.threadEmail = ThreadClass()
+            self.threadEmail = ThreadClass(self.line_email.text())
             self.threadEmail.start()
-            self.threadEmail.finished.connect(self.threadEmail.update)
-
-
-    def emailValidator(self, email):
-        """
-        :param email:
-        :return:
-        """
-        self.validator.setEmail(email)
-        self.validator.find_email_at_site()
-        result = self.validator.get_result()
-        print(result)
-        if result == "The Email is valid":
-            self.is_valid.setText(email + " " + "is a valid Email address")
-            self.is_valid.setStyleSheet("color: green")
-            self.frame_item.setVisible(False)
-            self.addEmail(email, "is valid")
-
-        elif result == "The email is not valid":
-            self.is_valid.setText(email + " " + "does not appear to be a valid Email address")
-            self.is_valid.setStyleSheet("color: red")
-            errors = self.validator.get_error_email()
-            #print(errors)
-            self.update_item_img(errors)
-            self.frame_item.setVisible(True)
-            self.addEmail(email, "is not valid")
-        else:
-            self.is_valid.setText("Error, Try again")
-            self.is_valid.setStyleSheet("color: yellow")
-            self.frame_item.setVisible(False)
-
+            self.threadEmail.finished.connect(self.threadEmail.updateResultValid)
 
 
 

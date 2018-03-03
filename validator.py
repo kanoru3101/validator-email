@@ -1,4 +1,3 @@
-import requests
 import re
 from selenium import webdriver
 from bs4 import BeautifulSoup
@@ -6,31 +5,6 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
-from GUI import *
-class Formater():
-
-    def findFormat(str):
-        """
-        find format file from way
-        :param filename:
-        :return:
-        """
-        #print(self)
-        try:
-            str = re.search(r"[a-zA-Z0-9\_\-\ ]+\.(csv|json|txt)", str).group(0)
-        except:
-            return None
-        str = str.split(".")
-        if len(str) == 2:
-            return str[-1]
-
-    def dataValidator(data,format):
-        if format == "csv":
-            pass
-        if format == "json":
-            pass
-        if format == "txt":
-            pass
 
 
 class Validator():
@@ -44,10 +18,12 @@ class Validator():
         dcap["phantomjs.page.settings.userAgent"] = (
             "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/53 (KHTML, like Gecko) Chrome/15.0.87")
 
-        self.driver = webdriver.PhantomJS(executable_path='C:/phantomjs-2.1.1-windows/bin/phantomjs.exe',
-                                         desired_capabilities=dcap, service_args=['--ignore-ssl-errors=true'])
+        #self.driver = webdriver.PhantomJS(executable_path='C:/phantomjs-2.1.1-windows/bin/phantomjs.exe',
+                                         #desired_capabilities=dcap, service_args=['--ignore-ssl-errors=true'])
+        # self.driver = webdriver.PhantomJS(executable_path='E:/Навчання/Python/Email Validator/driver/bin/phantomjs.exe',
+                                         #desired_capabilities=dcap, service_args=['--ignore-ssl-errors=true'])
         #self.driver = webdriver.Firefox(executable_path='C:\\geckodriver_firefox\\\geckodriver.exe')
-
+        self.driver = webdriver.Chrome(executable_path='C:\\webdrivers\\chromedriver.exe')
 
     def setEmail(self, e):
         self.email = e
@@ -96,37 +72,48 @@ class Validator():
         search email at site http://www.emailvalidator.co
         :return:
         """
-        #r = requests.get("http://www.emailvalidator.co")
-        #if r.status_code != 200:
-        #    raise r.status_code
+        """
+        r = requests.get("http://www.emailvalidator.co")
+        if r.status_code != 200:
+            raise r.status_code
+        """
+        print("!")
         self.driver.get("http://www.emailvalidator.co")
-        label_search = WebDriverWait(self.driver, 10).until(
+        print("!!")
+        label_search = WebDriverWait(self.driver, 60).until(
             EC.presence_of_element_located((By.ID, "EmailAddress"))
         )
         #self.driver.set_window_size(1920, 1080)
         #self.driver.save_screenshot('test.png')
+        print("!!!")
         label_search.clear()
+        print("!!!!")
         label_search.send_keys(self.email)
-        buttom = WebDriverWait(self.driver, 5).until(
+        print("1")
+        buttom = WebDriverWait(self.driver, 40).until(
             #EC.presence_of_element_located((By.XPATH, 'button.yellow.large'))
             EC.presence_of_element_located((By.XPATH, "//div[@class='fl']//a[@class='button yellow large']"))
         )
         buttom.click()
-        WebDriverWait(self.driver, 5)
+        WebDriverWait(self.driver, 50)
         try:
-            alert = WebDriverWait(self.driver, 5).until(
+            print("2")
+            alert = WebDriverWait(self.driver, 20).until(
                 EC.presence_of_element_located((By.XPATH, "//div[@class='span7']//div[@class='alert alert-success']"))
             )
             self.is_alert = True
         except:
             try:
-                alert = WebDriverWait(self.driver, 2).until(
+                print("3")
+                alert = WebDriverWait(self.driver, 5).until(
                     EC.presence_of_element_located((By.XPATH, "//div[@class='span7']//div[@class='alert alert-danger']"))
                 )
                 self.is_alert = False
             except:
+                print("4")
                 self.is_alert = None
         finally:
+            print("5")
             self.grabber()
 
 
@@ -135,7 +122,7 @@ class Validator():
         close webdriver
         :return:
         """
-        self.driver.close()
+        self.driver.quit()
 
 """
 app = Validator()
